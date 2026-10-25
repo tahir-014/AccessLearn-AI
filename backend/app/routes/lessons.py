@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Query
 from pydantic import BaseModel
-
+from uuid import uuid4
 from app.config import settings
 from app.database import db
 from app.services.ai_service import ai_service
@@ -41,12 +41,21 @@ async def upload_lesson(
     lesson_title = title.strip() if title and title.strip() else Path(file.filename).stem.replace("_", " ").title()
     
     # Save file safely to uploads directory
-    safe_filename = f"{int(Path(file.filename).stat().st_mtime if hasattr(Path(file.filename), 'stat') else 1000)}_{file.filename.replace(' ', '_')}"
-    saved_file_path = os.path.join(settings.UPLOAD_DIR, safe_filename)
-    
+    upload_dir = Path(settings.UPLOAD_DIR)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use a unique filename; never rely on the original file's disk path.
+    original_name = (file.filename or "upload.pdf").replace("\\", "/")
+    original_name = Path(original_name).name
+    safe_original_name = original_name.replace(" ", "_")
+    safe_filename = f"{uuid4().hex}_{safe_original_name}"
+
+    saved_file_path = upload_dir / safe_filename
+
     with open(saved_file_path, "wb") as f:
         f.write(extraction_result["file_bytes"])
 
+    saved_file_path = str(saved_file_path)
     lesson_id = db.insert_lesson(
         title=lesson_title,
         filename=file.filename,

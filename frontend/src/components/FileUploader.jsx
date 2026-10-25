@@ -32,7 +32,9 @@ export default function FileUploader({ onUploadSuccess }) {
     setSelectedFile(file);
     if (!customTitle) {
       // Pre-fill nice readable title
-      const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const baseName = file.name
+     .replace(/\.pdf$/i, '')
+     .replace(/[-_]/g, ' ');
       setCustomTitle(baseName.charAt(0).toUpperCase() + baseName.slice(1));
     }
   };

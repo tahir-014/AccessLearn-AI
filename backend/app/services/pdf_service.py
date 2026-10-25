@@ -5,15 +5,24 @@ from pypdf import PdfReader
 from fastapi import HTTPException, UploadFile
 from app.config import settings
 
+
 def clean_extracted_text(raw_text: str) -> str:
-    """Cleans up excessive newlines, strange Unicode glyphs, and multiple spaces."""
+    """Normalize whitespace while preserving paragraphs and page markers."""
     if not raw_text:
         return ""
-    # Normalize multiple blank lines to double newlines
-    text = re.sub(r'\r\n|\r', '\n', raw_text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    # Replace weird space characters
-    text = re.sub(r'[ \t]{2,}', ' ', text)
+
+    text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Normalize non-breaking and unusual spacing characters.
+    text = text.replace("\u00a0", " ").replace("\u200b", "")
+
+    # Remove trailing spaces on each line.
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r" *\n *", "\n", text)
+
+    # Collapse excessive blank lines without merging paragraphs.
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
     return text.strip()
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf") -> Dict[str, Any]:

@@ -74,3 +74,4 @@ def clear_chat_history(lesson_id: Optional[int] = Query(None)):
     """Clears conversation history."""
     db.clear_chat_history(lesson_id=lesson_id)
     return {"message": "Chat history cleared successfully."}
+
